@@ -1,0 +1,961 @@
+# to show the databases present in the computer system
+show dbs
+
+show dbs                     show database names
+show collections             show collections in current database
+show users                   show users in current database
+show profile                 show most recent system.profile entries with time >= 1ms
+show logs                    show the accessible logger names
+show log [name]              prints out the last segment of log in memory, 'global' is default
+use <db_name>                set current database
+db.mycoll.find()             list objects in collection mycoll
+db.mycoll.find( { a : 1 } )  list objects in mycoll where a == 1
+it                           result of the last line evaluated; use to further iterate
+DBQuery.shellBatchSize = x   set default number of items to display on shell
+exit                         quit the mongo shell
+
+
+--- to create a database 
+use mycustomers   (it creates the database my customers and switches to that)
+-- to check the current database you are using 
+db
+
+
+-- a document - is a record or an entry (each document is a record of a an individual or a customer in this case)
+a document is a json object. inside the document we can have arrays, fields and the value pair, we can have other json objects inside(json objects are enclosed in currly braces
+)
+
+example: { 
+            first_name: "John",
+            last_name: "Doe",
+            memberships: ["mem1", "mem2"],
+            address: {
+                    street: "4 main st",
+                    city: "Boston",
+            },
+            contacts: [
+                        {name: "Brad", relationship: "friend"},
+                        {name: "Heloo_world", relationship: "assistant"}
+            ]         
+}
+
+ to create a user  we use the commmand
+ db.createUser({ user: "Brad",
+                 pwd: "1234",
+                 roles: ["readWrite", "dbAdmin"]
+ });
+
+
+
+ -- collection is a table. it holds documents or record
+ to  create a collection
+ db.createCollection("customers");
+
+ to see the colections/tables in the database
+show collections
+
+
+to insert a document into the collection
+db.customers.insert({first_name: "John", last_name: "Doe"});
+
+to see the documents in the collection customers(like the select query)
+db.customers.find()-- shows all the documents in the collection
+{ "_id" : ObjectId("61bfb7429ae7142773a7a5c4"), "first_name" : "John", "last_name" : "Doe" }
+
+to add multiple record at once, use an array, we can also introduce an attribute to one a specific document without predefining it
+db.customers.insert([{first_name: "Steven", last_name: "Smith"},
+                    {first_name: "Joan", last_name: "Johnson", gender: "female"}                
+]);
+
+
+--noSQL creates its own unique identifier
+> db.customers.find();
+{ "_id" : ObjectId("61bfb7429ae7142773a7a5c4"), "first_name" : "John", "last_name" : "Doe" }
+{ "_id" : ObjectId("61bfba029ae7142773a7a5c5"), "first_name" : "Steven", "last_name" : "Smith" }
+{ "_id" : ObjectId("61bfba029ae7142773a7a5c6"), "first_name" : "Joan", "last_name" : "Johnson", "gender" : "female" }
+
+
+
+to make it look nice 
+db.customers.find().pretty();
+
+{
+    "_id" : ObjectId("61bfb7429ae7142773a7a5c4"),
+    "first_name" : "John",
+    "last_name" : "Doe"
+}
+{
+    "_id" : ObjectId("61bfba029ae7142773a7a5c5"),
+    "first_name" : "Steven",
+    "last_name" : "Smith"
+}
+{
+    "_id" : ObjectId("61bfba029ae7142773a7a5c6"),
+    "first_name" : "Joan",
+    "last_name" : "Johnson",
+    "gender" : "female"
+}
+
+--- updating a document
+choose a unique identifier or one unique field in that documen. first part in what we are looking for, second part is what we are changing it to
+to avoild losing the data in the other fields, wrewrite them during the update
+
+example to add another field gender to the entry with John Doe
+
+db.customers.update({first_name: "John"}, {first_name: "John", last_name: "Doe", gender: "Male"});    --- we cant just say "{first_name: "John"}, {gender: "Male"}"-- in this case we will lose the data in the other fields and just have gender
+    {
+        "_id" : ObjectId("61bfb7429ae7142773a7a5c4"),
+        "first_name" : "John",
+        "last_name" : "Doe",
+        "gender" : "Male"
+}
+{
+        "_id" : ObjectId("61bfba029ae7142773a7a5c5"),
+        "first_name" : "Steven",
+        "last_name" : "Smith"
+}
+{
+        "_id" : ObjectId("61bfba029ae7142773a7a5c6"),
+        "first_name" : "Joan",
+        "last_name" : "Johnson",
+        "gender" : "female"
+}
+
+-- a better way to do this without repeating field we can use the set command
+db.customers.update({first_name: "Steven"}, {$set: {gender: "Male"}}); 
+
+
+{
+    "_id" : ObjectId("61bfb7429ae7142773a7a5c4"),
+    "first_name" : "John",
+    "last_name" : "Doe",
+    "gender" : "Male"
+}
+{
+    "_id" : ObjectId("61bfba029ae7142773a7a5c5"),
+    "first_name" : "Steven",
+    "last_name" : "Smith",
+    "gender" : "Male"
+}
+{
+    "_id" : ObjectId("61bfba029ae7142773a7a5c6"),
+    "first_name" : "Joan",
+    "last_name" : "Johnson",
+    "gender" : "female"
+}
+
+
+
+--- to increment numeric values, we add field age to steven then increment it by 5 using the inc function
+db.customers.update({first_name: "Steven"}, {$set: {age: 45}});
+
+{
+    "_id" : ObjectId("61bfb7429ae7142773a7a5c4"),
+    "first_name" : "John",
+    "last_name" : "Doe",
+    "gender" : "Male"
+}
+{
+    "_id" : ObjectId("61bfba029ae7142773a7a5c5"),
+    "first_name" : "Steven",
+    "last_name" : "Smith",
+    "gender" : "Male",
+    "age" : 45
+}
+{
+    "_id" : ObjectId("61bfba029ae7142773a7a5c6"),
+    "first_name" : "Joan",
+    "last_name" : "Johnson",
+    "gender" : "female"
+}
+
+-- to increment 
+
+db.customers.update({first_name: "Steven"}, {$inc: {age: 5}});
+
+{
+    "_id" : ObjectId("61bfba029ae7142773a7a5c5"),
+    "first_name" : "Steven",
+    "last_name" : "Smith",
+    "gender" : "Male",
+    "age" : 50
+}
+
+
+-- the age is shown to have been updated
+
+--- to remove a field in a document , we  use the unset command
+
+db.customers.update({first_name: "Steven"}, {$unset: {age: 1}});
+
+{
+    "_id" : ObjectId("61bfba029ae7142773a7a5c5"),
+    "first_name" : "Steven",
+    "last_name" : "Smith",
+    "gender" : "Male"
+}
+--- now unset removed the field age
+
+
+if a record is not there we can check with the update methd, and the results will be unmatched 0
+db.customers.update({first_name: "Mary"}, {first_name: "Mary", last_name: "Mary", gender: "Samson"});
+
+
+if we want to it to be inserted if it is not found we use the command upsert
+db.customers.update({first_name: "Mary"}, {first_name: "Mary", last_name: "Mary", gender: "Samson"}, {upsert: true});
+
+--now it shows an object is added
+WriteResult({
+    "nMatched" : 0,
+    "nUpserted" : 1,
+    "nModified" : 0,
+    "_id" : ObjectId("61bfc126bc86fdbfa39224a0")
+
+
+{
+        "_id" : ObjectId("61bfb7429ae7142773a7a5c4"),
+        "first_name" : "John",
+        "last_name" : "Doe",
+        "gender" : "Male"
+}
+{
+        "_id" : ObjectId("61bfba029ae7142773a7a5c5"),
+        "first_name" : "Steven",
+        "last_name" : "Smith",
+        "gender" : "Male"
+}
+{
+        "_id" : ObjectId("61bfba029ae7142773a7a5c6"),
+        "first_name" : "Joan",
+        "last_name" : "Johnson",
+        "gender" : "female"
+}
+{
+        "_id" : ObjectId("61bfc126bc86fdbfa39224a0"),
+        "first_name" : "Mary",
+        "last_name" : "Mary",
+        "gender" : "Samson"
+}  }
+
+
+we can see mary is inserted into the collection
+-- to change the name of a field or to rename a field we use the rename function
+
+db.customers.update({first_name: "Steven"}, {$rename: {"gender": "sex"}});
+{
+    "_id" : ObjectId("61bfba029ae7142773a7a5c5"),
+    "first_name" : "Steven",
+    "last_name" : "Smith",
+    "sex" : "Male"
+}
+
+
+gender now changes to sex
+
+
+to delete a customer or customer with all first_name steven
+db.customers.remove({first_name: "Steven"});
+
+WriteResult({ "nRemoved" : 1 }) -- removed 1 because there was just one Steven in the collection
+
+
+
+ -- inserting more data
+ db.customers.insert([{ 
+    first_name: "Linda",
+    last_name: "Doe",
+    gender: "Female",
+    age: 29,
+    address: {
+            street: "4 main st",
+            city: "Boston",
+            state: "LA"
+    },
+    memberships: ["mem1", "mem2"],
+    balance: 122.3 },
+    
+    {first_name: "Halina",
+    last_name: "May",
+    gender: "Female",
+    age: 45,
+    address: {
+            street: "33 maine st",
+            city: "Boston",
+            state: "LA"
+    },
+    memberships: ["mem1", "mem2"],
+    balance: 569 },
+
+    {first_name: "Trey",
+    last_name: "John",
+    gender: "Male",
+    age: 19,
+    address: {
+            street: "88 queens west st",
+            city: "New York",
+            state: "DC"
+    },
+    memberships: ["mem1", "mem9"],
+    balance: 200.50},
+
+    {first_name: "Mark",
+    last_name: "Page",
+    gender: "Male",
+    age: 78,
+    address: {
+            street: "28 Waters_bridge",
+            city: "Texas",
+            state: "Pensv"
+    },
+    memberships: ["mem1", "mem2"],
+    balance: 457.50}, 
+    
+    {first_name: "Nancy",
+    last_name: "Hamid",
+    gender: "Female",
+    age: 66,
+    address: {
+            street: "411 Blue st",
+            city: "Boston",
+            state: "MA"
+    },
+    memberships: ["mem1", "mem2"],
+    balance: 199}]);
+
+
+     -- the result 
+     db.customers.find().pretty();
+     {
+             "_id" : ObjectId("61bfb7429ae7142773a7a5c4"),
+             "first_name" : "John",
+             "last_name" : "Doe",
+             "gender" : "Male"
+     }
+     {
+             "_id" : ObjectId("61bfba029ae7142773a7a5c6"),
+             "first_name" : "Joan",
+             "last_name" : "Johnson",
+             "gender" : "female"
+     }
+     {
+             "_id" : ObjectId("61bfc126bc86fdbfa39224a0"),
+             "first_name" : "Mary",
+             "last_name" : "Mary",
+             "gender" : "Samson"
+     }
+     {
+             "_id" : ObjectId("61bfc95d9ae7142773a7a5c7"),
+             "first_name" : "Linda",
+             "last_name" : "Doe",
+             "gender" : "Female",
+             "age" : 29,
+             "address" : {
+                     "street" : "4 main st",
+                     "city" : "Boston",
+                     "state" : "LA"
+             },
+             "memberships" : [
+                     "mem1",
+                     "mem2"
+             ],
+             "balance" : 122.3
+     }
+     {
+             "_id" : ObjectId("61bfc95d9ae7142773a7a5c8"),
+             "first_name" : "Halina",
+             "last_name" : "May",
+             "gender" : "Female",
+             "age" : 45,
+             "address" : {
+                     "street" : "33 maine st",
+                     "city" : "Boston",
+                     "state" : "LA"
+             },
+             "memberships" : [
+                     "mem1",
+                     "mem2"
+             ],
+             "balance" : 569
+     }
+     {
+             "_id" : ObjectId("61bfc95d9ae7142773a7a5c9"),
+             "first_name" : "Trey",
+             "last_name" : "John",
+             "gender" : "Male",
+             "age" : 19,
+             "address" : {
+                     "street" : "88 queens west st",
+                     "city" : "New York",
+                     "state" : "DC"
+             },
+             "memberships" : [
+                     "mem1",
+                     "mem9"
+             ],
+             "balance" : 200.5
+     }
+     {
+             "_id" : ObjectId("61bfc95d9ae7142773a7a5ca"),
+             "first_name" : "Mark",
+             "last_name" : "Page",
+             "gender" : "Male",
+             "age" : 78,
+             "address" : {
+                     "street" : "28 Waters_bridge",
+                     "city" : "Texas",
+                     "state" : "Pensv"
+             },
+             "memberships" : [
+                     "mem1",
+                     "mem2"
+             ],
+             "balance" : 457.5
+     }
+     {
+             "_id" : ObjectId("61bfc95d9ae7142773a7a5cb"),
+             "first_name" : "Nancy",
+             "last_name" : "Hamid",
+             "gender" : "Female",
+             "age" : 66,
+             "address" : {
+                     "street" : "411 Blue st",
+                     "city" : "Boston",
+                     "state" : "MA"
+             },
+             "memberships" : [
+                     "mem1",
+                     "mem2"
+             ],
+             "balance" : 199
+     }
+     
+
+     --- querries 
+     1) find the customer with the name Trey and return all his information
+     db.customers.find({first_name:"Trey"}).pretty();
+     
+     "_id" : ObjectId("61bfc95d9ae7142773a7a5c9"),
+     "first_name" : "Trey",
+     "last_name" : "John",
+     "gender" : "Male",
+     "age" : 19,
+     "address" : {
+             "street" : "88 queens west st",
+             "city" : "New York",
+             "state" : "DC"
+     },
+     "memberships" : [
+             "mem1",
+             "mem9"
+     ],
+     "balance" : 200.5
+
+
+     2)find Trey and Linda
+     db.customers.find({$or:[{first_name: "Trey"}, {first_name: "Linda"}]}).pretty();
+
+     {
+        "_id" : ObjectId("61bfc95d9ae7142773a7a5c7"),
+        "first_name" : "Linda",
+        "last_name" : "Doe",
+        "gender" : "Female",
+        "age" : 29,
+        "address" : {
+                "street" : "4 main st",
+                "city" : "Boston",
+                "state" : "LA"
+        },
+        "memberships" : [
+                "mem1",
+                "mem2"
+        ],
+        "balance" : 122.3
+}
+{
+        "_id" : ObjectId("61bfc95d9ae7142773a7a5c9"),
+        "first_name" : "Trey",
+        "last_name" : "John",
+        "gender" : "Male",
+        "age" : 19,
+        "address" : {
+                "street" : "88 queens west st",
+                "city" : "New York",
+                "state" : "DC"
+        },
+        "memberships" : [
+                "mem1",
+                "mem9"
+        ],
+        "balance" : 200.5
+}
+
+4)find every customer whose gender is male
+db.customers.find({gender: "Male"}).pretty();
+{
+    "_id" : ObjectId("61bfb7429ae7142773a7a5c4"),
+    "first_name" : "John",
+    "last_name" : "Doe",
+    "gender" : "Male"
+}
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5c9"),
+    "first_name" : "Trey",
+    "last_name" : "John",
+    "gender" : "Male",
+    "age" : 19,
+    "address" : {
+            "street" : "88 queens west st",
+            "city" : "New York",
+            "state" : "DC"
+    },
+    "memberships" : [
+            "mem1",
+            "mem9"
+    ],
+    "balance" : 200.5
+}
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5ca"),
+    "first_name" : "Mark",
+    "last_name" : "Page",
+    "gender" : "Male",
+    "age" : 78,
+    "address" : {
+            "street" : "28 Waters_bridge",
+            "city" : "Texas",
+            "state" : "Pensv"
+    },
+    "memberships" : [
+            "mem1",
+            "mem2"
+    ],
+    "balance" : 457.5
+}
+
+
+6)find everyone whose is under the age of 40
+db.customers.find({age:{$lt: 40}}).pretty();
+
+db.customers.find({gender: "Male"}).pretty();
+{
+        "_id" : ObjectId("61bfb7429ae7142773a7a5c4"),
+        "first_name" : "John",
+        "last_name" : "Doe",
+        "gender" : "Male"
+}
+{
+        "_id" : ObjectId("61bfc95d9ae7142773a7a5c9"),
+        "first_name" : "Trey",
+        "last_name" : "John",
+        "gender" : "Male",
+        "age" : 19,
+        "address" : {
+                "street" : "88 queens west st",
+                "city" : "New York",
+                "state" : "DC"
+        },
+        "memberships" : [
+                "mem1",
+                "mem9"
+        ],
+        "balance" : 200.5
+}
+{
+        "_id" : ObjectId("61bfc95d9ae7142773a7a5ca"),
+        "first_name" : "Mark",
+        "last_name" : "Page",
+        "gender" : "Male",
+        "age" : 78,
+        "address" : {
+                "street" : "28 Waters_bridge",
+                "city" : "Texas",
+                "state" : "Pensv"
+        },
+        "memberships" : [
+                "mem1",
+                "mem2"
+        ],
+        "balance" : 457.5
+}
+> db.customers.find({age:{$lt: 40}}).pretty();
+{
+        "_id" : ObjectId("61bfc95d9ae7142773a7a5c7"),
+        "first_name" : "Linda",
+        "last_name" : "Doe",
+        "gender" : "Female",
+        "age" : 29,
+        "address" : {
+                "street" : "4 main st",
+                "city" : "Boston",
+                "state" : "LA"
+        },
+        "memberships" : [
+                "mem1",
+                "mem2"
+        ],
+        "balance" : 122.3
+}
+{
+        "_id" : ObjectId("61bfc95d9ae7142773a7a5c9"),
+        "first_name" : "Trey",
+        "last_name" : "John",
+        "gender" : "Male",
+        "age" : 19,
+        "address" : {
+                "street" : "88 queens west st",
+                "city" : "New York",
+                "state" : "DC"
+        },
+        "memberships" : [
+                "mem1",
+                "mem9"
+        ],
+        "balance" : 200.5
+}
+
+
+
+
+7) find a customer whose age is greater than 70
+
+db.customers.find({age:{$gt: 70}}).pretty();
+
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5ca"),
+    "first_name" : "Mark",
+    "last_name" : "Page",
+    "gender" : "Male",
+    "age" : 78,
+    "address" : {
+            "street" : "28 Waters_bridge",
+            "city" : "Texas",
+            "state" : "Pensv"
+    },
+    "memberships" : [
+            "mem1",
+            "mem2"
+    ],
+    "balance" : 457.5
+}
+
+
+gt -- greater than 
+lt - les than 
+lte- less than or equal to
+gte - greater tahn or equal to 
+
+
+7) find everyone who lives in the city of Boston
+db.customers.find({"address.city": "Boston"}).pretty();
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5c7"),
+    "first_name" : "Linda",
+    "last_name" : "Doe",
+    "gender" : "Female",
+    "age" : 29,
+    "address" : {
+            "street" : "4 main st",
+            "city" : "Boston",
+            "state" : "LA"
+    },
+    "memberships" : [
+            "mem1",
+            "mem2"
+    ],
+    "balance" : 122.3
+}
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5c8"),
+    "first_name" : "Halina",
+    "last_name" : "May",
+    "gender" : "Female",
+    "age" : 45,
+    "address" : {
+            "street" : "33 maine st",
+            "city" : "Boston",
+            "state" : "LA"
+    },
+    "memberships" : [
+            "mem1",
+            "mem2"
+    ],
+    "balance" : 569
+}
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5cb"),
+    "first_name" : "Nancy",
+    "last_name" : "Hamid",
+    "gender" : "Female",
+    "age" : 66,
+    "address" : {
+            "street" : "411 Blue st",
+            "city" : "Boston",
+            "state" : "MA"
+    },
+    "memberships" : [
+            "mem1",
+            "mem2"
+    ],
+    "balance" : 199
+}
+
+
+8) find the customers who have mem1 membership
+db.customers.find({memberships: "mem1"}).pretty();
+
+
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5cb"),
+    "first_name" : "Nancy",
+    "last_name" : "Hamid",
+    "gender" : "Female",
+    "age" : 66,
+    "address" : {
+            "street" : "411 Blue st",
+            "city" : "Boston",
+            "state" : "MA"
+    },
+    "memberships" : [
+            "mem1",
+            "mem2"
+    ],
+    "balance" : 199
+}
+
+
+---- sorting
+find all documents in order of first name in ascending order ( 1 means ascending order, -1 means descending order)
+
+db.customers.find().sort({last_name: 1}).pretty();
+
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5c7"),
+    "first_name" : "Linda",
+    "last_name" : "Doe",
+    "gender" : "Female",
+    "age" : 29,
+    "address" : {
+            "street" : "4 main st",
+            "city" : "Boston",
+            "state" : "LA"
+    },
+    "memberships" : [
+            "mem1",
+            "mem2"
+    ],
+    "balance" : 122.3
+}
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5cb"),
+    "first_name" : "Nancy",
+    "last_name" : "Hamid",
+    "gender" : "Female",
+    "age" : 66,
+    "address" : {
+            "street" : "411 Blue st",
+            "city" : "Boston",
+            "state" : "MA"
+    },
+    "memberships" : [
+            "mem1",
+            "mem2"
+    ],
+    "balance" : 199
+}
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5c9"),
+    "first_name" : "Trey",
+    "last_name" : "John",
+    "gender" : "Male",
+    "age" : 19,
+    "address" : {
+            "street" : "88 queens west st",
+            "city" : "New York",
+            "state" : "DC"
+    },
+    "memberships" : [
+            "mem1",
+            "mem9"
+    ],
+    "balance" : 200.5
+}
+
+
+-- sort in descending order
+db.customers.find().sort({last_name: -1}).pretty();
+
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5c9"),
+    "first_name" : "Trey",
+    "last_name" : "John",
+    "gender" : "Male",
+    "age" : 19,
+    "address" : {
+            "street" : "88 queens west st",
+            "city" : "New York",
+            "state" : "DC"
+    },
+    "memberships" : [
+            "mem1",
+            "mem9"
+    ],
+    "balance" : 200.5
+}
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5cb"),
+    "first_name" : "Nancy",
+    "last_name" : "Hamid",
+    "gender" : "Female",
+    "age" : 66,
+    "address" : {
+            "street" : "411 Blue st",
+            "city" : "Boston",
+            "state" : "MA"
+    },
+    "memberships" : [
+            "mem1",
+            "mem2"
+    ],
+    "balance" : 199
+}
+{
+    "_id" : ObjectId("61bfb7429ae7142773a7a5c4"),
+    "first_name" : "John",
+    "last_name" : "Doe",
+    "gender" : "Male"
+}
+{
+    "_id" : ObjectId("61bfc95d9ae7142773a7a5c7"),
+    "first_name" : "Linda",
+    "last_name" : "Doe",
+    "gender" : "Female",
+    "age" : 29,
+    "address" : {
+            "street" : "4 main st",
+            "city" : "Boston",
+            "state" : "LA"
+    },
+    "memberships" : [
+            "mem1",
+            "mem2"
+    ],
+    "balance" : 122.3
+}
+
+
+-- to count the number of documents in the collection
+db.customers.find().count();
+8  -  8 documents
+
+-- to count the number of customers who are male
+db.customers.find({gender: "Male"}).count();
+3 -- 3 male
+
+-- find the first 4 customers in the collection customers
+db.customers.find().limit(2).pretty();
+{
+    "_id" : ObjectId("61bfb7429ae7142773a7a5c4"),
+    "first_name" : "John",
+    "last_name" : "Doe",
+    "gender" : "Male"
+}
+{
+    "_id" : ObjectId("61bfba029ae7142773a7a5c6"),
+    "first_name" : "Joan",
+    "last_name" : "Johnson",
+    "gender" : "female"
+}
+
+
+
+-- you can also combine many functions
+
+we can also iterate through 
+
+db.customers.find().forEach(function(doc){print("Customer_name is " + doc.first_name)});
+Customer_name is John
+Customer_name is Joan
+Customer_name is Mary
+Customer_name is Linda
+Customer_name is Halina
+Customer_name is Trey
+Customer_name is Mark
+Customer_name is Nancy
+
+
+
+
+class Tutorial week10 Mongodb
+Practice 2
+Create a database called testDB, and create a collection called info_col (name, age, message), then practice the following practices.
+1. Insert the following data into the collection:
+db.info_col.insertMany([
+{ name: "Alice", age: 20, message: "I am happy" },
+{ name: "Monica", age: 24, message: "I am afraid" },
+{ name: "Smile", age: 23, message: "You are accepted" }
+]);
+2. Select all the data from collection info_col.
+3. Update the message to “I will succeed” where the name is ‘Monica’ .
+4. Delete the document where the name is ‘Smile’
+
+
+use testDB
+switched to db testDB
+db.createCollection("info_col");
+{ "ok" : 1 }
+{
+    "acknowledged" : true,
+    "insertedIds" : [
+            ObjectId("61bfd581f43419dbd7e040a4"),
+            ObjectId("61bfd581f43419dbd7e040a5"),
+            ObjectId("61bfd581f43419dbd7e040a6")
+    ]
+}
+
+2- db.info_col.find({}).pretty();
+
+{
+    "_id" : ObjectId("61bfd581f43419dbd7e040a4"),
+    "name" : "Alice",
+    "age" : 20,
+    "message" : "I am happy"
+}
+{
+    "_id" : ObjectId("61bfd581f43419dbd7e040a5"),
+    "name" : "Monica",
+    "age" : 24,
+    "message" : "I am afraid"
+}
+{
+    "_id" : ObjectId("61bfd581f43419dbd7e040a6"),
+    "name" : "Smile",
+    "age" : 23,
+    "message" : "You are accepted"
+}
+
+3. Update the message to “I will succeed” where the name is ‘Monica’ .
+
+db.info_col.update({name: "Monica"}, {$set:{message: "I will succeed"}});
+-- ({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+
+
+4. Delete the document where the name is ‘Smile’
+
+db.info_col.remove({name: "Smile"});
+WriteResult({ "nRemoved" : 1 })
+
+db.info_col.find({}).pretty();
+
+{
+    "_id" : ObjectId("61bfd581f43419dbd7e040a4"),
+    "name" : "Alice",
+    "age" : 20,
+    "message" : "I am happy"
+}
+{
+    "_id" : ObjectId("61bfd581f43419dbd7e040a5"),
+    "name" : "Monica",
+    "age" : 24,
+    "message" : "I will succeed"
+}
+
